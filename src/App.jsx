@@ -1,27 +1,35 @@
 import { useState, useEffect } from 'react';
-import { AppBar, Toolbar, Typography, Button, Box, Container, MenuItem, Select, FormControl, InputLabel, Paper, Stack } from '@mui/material';
+import { AppBar, Toolbar, Typography, Button, Box, Container, MenuItem, Select, FormControl, InputLabel, Paper, Stack, TextField, Alert, Snackbar, Dialog, DialogTitle, DialogContent, DialogActions } from '@mui/material';
 import { PLATFORMS } from './platforms';
 import { useEditor, EditorContent } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import jsPDF from 'jspdf';
-
-const PAGES = [
-  { label: 'Landing', key: 'landing' },
-  { label: 'Why/Benefits', key: 'benefits' },
-  { label: 'Main App', key: 'main' },
-];
+import GeminiService from './services/gemini';
+import { textToTipTapJson, tipTapJsonToText } from './utils/textToTipTap';
+import buggenieLogo from './assets/buggenie-logo.png';
 
 function App() {
-  const [page, setPage] = useState('landing');
   const [platform, setPlatform] = useState('');
   const [category, setCategory] = useState('');
   const [vrtOptions, setVrtOptions] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [vulnerabilityDetails, setVulnerabilityDetails] = useState('');
+  const [apiKey, setApiKey] = useState(() => {
+    // Load API key from localStorage on component mount
+    return localStorage.getItem('buggenie_api_key') || '';
+  });
+  const [showApiKeyDialog, setShowApiKeyDialog] = useState(false);
+  const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
 
   useEffect(() => {
     const selected = PLATFORMS.find((p) => p.key === platform);
     setVrtOptions(selected ? selected.categories : []);
     setCategory('');
+    // Clear the editor content when platform changes
+    if (editor) {
+      editor.commands.clearContent();
+    }
   }, [platform]);
 
   // TipTap editor setup
@@ -31,70 +39,79 @@ function App() {
     editable: !!(platform && category),
   });
 
-  // Placeholder for AI-powered report generation
-  const handleGenerateReport = () => {
+  // AI-powered report generation
+  const handleGenerateReport = async () => {
     if (!editor) return;
+    
+    if (!apiKey) {
+      setShowApiKeyDialog(true);
+      return;
+    }
+
+    // Vulnerability details are optional - if not provided, use a generic template
+    const details = vulnerabilityDetails.trim() || `Generic ${category} vulnerability found in the application.`;
+
     setLoading(true);
-    setTimeout(() => {
-      let content = {};
-      if (platform === 'bugcrowd') {
-        content = {
-          type: 'doc',
-          content: [
-            { type: 'heading', attrs: { level: 2 }, content: [{ type: 'text', text: 'Summary' }] },
-            { type: 'paragraph', content: [{ type: 'text', text: `A security vulnerability was discovered in the application under the category: ${category}. This issue could allow an attacker to compromise user data or application integrity.` }] },
-            { type: 'heading', attrs: { level: 2 }, content: [{ type: 'text', text: 'Business Impact' }] },
-            { type: 'paragraph', content: [{ type: 'text', text: 'Exploitation of this vulnerability could result in data leakage, unauthorized access, or service disruption, potentially affecting business reputation and user trust.' }] },
-            { type: 'heading', attrs: { level: 2 }, content: [{ type: 'text', text: 'Steps to Reproduce' }] },
-            { type: 'paragraph', content: [{ type: 'text', text: '1. Go to the login page.' }] },
-            { type: 'paragraph', content: [{ type: 'text', text: '2. Enter a crafted payload in the username field.' }] },
-            { type: 'paragraph', content: [{ type: 'text', text: '3. Observe the unexpected behavior.' }] },
-            { type: 'heading', attrs: { level: 2 }, content: [{ type: 'text', text: 'Proof of Concept (PoC)' }] },
-            { type: 'codeBlock', content: [{ type: 'text', text: '[Insert PoC code or request here]' }] },
-          ],
-        };
-      } else if (platform === 'google') {
-        content = {
-          type: 'doc',
-          content: [
-            { type: 'heading', attrs: { level: 2 }, content: [{ type: 'text', text: 'Summary (200 chars)' }] },
-            { type: 'paragraph', content: [{ type: 'text', text: `${category} vulnerability allows an attacker to bypass security controls and access sensitive data.` }] },
-            { type: 'heading', attrs: { level: 2 }, content: [{ type: 'text', text: 'Vulnerability Description' }] },
-            { type: 'paragraph', content: [{ type: 'text', text: `The application fails to properly validate input, leading to a ${category} vulnerability.` }] },
-            { type: 'heading', attrs: { level: 2 }, content: [{ type: 'text', text: 'Attack Preconditions' }] },
-            { type: 'paragraph', content: [{ type: 'text', text: '- User must be authenticated.' }] },
-            { type: 'paragraph', content: [{ type: 'text', text: '- Attacker must have access to the target endpoint.' }] },
-            { type: 'heading', attrs: { level: 2 }, content: [{ type: 'text', text: 'Reproduction Steps / PoC' }] },
-            { type: 'paragraph', content: [{ type: 'text', text: '1. Navigate to the affected endpoint.' }] },
-            { type: 'paragraph', content: [{ type: 'text', text: '2. Submit the following payload: [example].' }] },
-            { type: 'paragraph', content: [{ type: 'text', text: '3. Observe the response.' }] },
-            { type: 'heading', attrs: { level: 2 }, content: [{ type: 'text', text: 'Attack Scenario' }] },
-            { type: 'paragraph', content: [{ type: 'text', text: 'An attacker could exploit this to gain unauthorized access to user data.' }] },
-            { type: 'heading', attrs: { level: 2 }, content: [{ type: 'text', text: 'Screenshot' }] },
-            { type: 'paragraph', content: [{ type: 'text', text: '[Insert screenshot here]' }] },
-          ],
-        };
-      } else if (platform === 'hackerone') {
-        content = {
-          type: 'doc',
-          content: [
-            { type: 'heading', attrs: { level: 2 }, content: [{ type: 'text', text: 'Description' }] },
-            { type: 'paragraph', content: [{ type: 'text', text: `A ${category} vulnerability was found in the application, allowing attackers to compromise security.` }] },
-            { type: 'heading', attrs: { level: 2 }, content: [{ type: 'text', text: 'Summary' }] },
-            { type: 'paragraph', content: [{ type: 'text', text: 'The vulnerability allows for exploitation by sending a specially crafted request.' }] },
-            { type: 'heading', attrs: { level: 2 }, content: [{ type: 'text', text: 'Steps To Reproduce' }] },
-            { type: 'paragraph', content: [{ type: 'text', text: '1. Go to the affected page.' }] },
-            { type: 'paragraph', content: [{ type: 'text', text: '2. Enter the following payload: [example].' }] },
-            { type: 'paragraph', content: [{ type: 'text', text: '3. Submit the request and observe the result.' }] },
-            { type: 'heading', attrs: { level: 2 }, content: [{ type: 'text', text: 'Supporting Material/References' }] },
-            { type: 'paragraph', content: [{ type: 'text', text: `- [OWASP ${category} Reference](https://owasp.org/)` }] },
-            { type: 'paragraph', content: [{ type: 'text', text: '- [Attach logs, screenshots, or other evidence here]' }] },
-          ],
-        };
-      }
-      editor.commands.setContent(content);
+    setError('');
+
+    try {
+      // Initialize Gemini service
+      GeminiService.initialize(apiKey);
+      
+      // Generate report using AI
+      const aiReport = await GeminiService.generateReport(platform, category, details);
+      
+      // Convert AI response to TipTap format
+      const tipTapContent = textToTipTapJson(aiReport);
+      editor.commands.setContent(tipTapContent);
+      
+      setSuccess('Report generated successfully using AI!');
+    } catch (error) {
+      console.error('Error generating report:', error);
+      setError(`Failed to generate report: ${error.message}`);
+    } finally {
       setLoading(false);
-    }, 700);
+    }
+  };
+
+  // Enhance existing report with AI
+  const handleEnhanceReport = async () => {
+    if (!editor || !apiKey) return;
+    
+    const currentContent = tipTapJsonToText(editor.getJSON());
+    if (!currentContent.trim()) {
+      setError('No content to enhance. Please generate a report first.');
+      return;
+    }
+
+    setLoading(true);
+    setError('');
+
+    try {
+      GeminiService.initialize(apiKey);
+      const enhancedReport = await GeminiService.enhanceReport(currentContent, platform, category);
+      const tipTapContent = textToTipTapJson(enhancedReport);
+      editor.commands.setContent(tipTapContent);
+      setSuccess('Report enhanced successfully!');
+    } catch (error) {
+      console.error('Error enhancing report:', error);
+      setError(`Failed to enhance report: ${error.message}`);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Handle API key submission
+  const handleApiKeySubmit = () => {
+    if (!apiKey.trim()) {
+      setError('Please enter a valid Google Gemini API key.');
+      return;
+    }
+    // Save API key to localStorage
+    localStorage.setItem('buggenie_api_key', apiKey.trim());
+    setShowApiKeyDialog(false);
+    setError('');
+    setSuccess('API key saved successfully! It will be remembered for future sessions.');
   };
 
   // Export to PDF
@@ -103,6 +120,7 @@ function App() {
     const doc = new jsPDF();
     const json = editor.getJSON();
     const pageWidth = doc.internal.pageSize.getWidth() - 20; // 10 margin on each side
+    const pageHeight = doc.internal.pageSize.getHeight();
     let y = 10;
     const lineHeight = 8;
 
@@ -110,7 +128,13 @@ function App() {
       const lines = doc.splitTextToSize(text, pageWidth);
       if (isBold) doc.setFont(undefined, 'bold');
       else doc.setFont(undefined, 'normal');
+      
       lines.forEach(line => {
+        // Check if we need a new page
+        if (y + lineHeight > pageHeight - 20) {
+          doc.addPage();
+          y = 10;
+        }
         doc.text(line, 10, y);
         y += lineHeight;
       });
@@ -121,6 +145,11 @@ function App() {
       json.content.forEach(node => {
         if (node.type === 'heading') {
           const text = node.content?.map(n => n.text).join('') || '';
+          // Check if we need a new page for heading
+          if (y + lineHeight > pageHeight - 20) {
+            doc.addPage();
+            y = 10;
+          }
           addLines(text, true);
           y += 2;
         } else if (node.type === 'paragraph') {
@@ -132,6 +161,11 @@ function App() {
           const text = node.content?.map(n => n.text).join('') || '';
           const lines = doc.splitTextToSize(text, pageWidth);
           lines.forEach(line => {
+            // Check if we need a new page
+            if (y + lineHeight > pageHeight - 20) {
+              doc.addPage();
+              y = 10;
+            }
             doc.text(line, 10, y);
             y += lineHeight;
           });
@@ -145,52 +179,16 @@ function App() {
 
   return (
     <>
-      <AppBar position="static" elevation={2} sx={{ width: '100%', m: 0, borderRadius: 0 }}>
-        <Toolbar>
-          <Typography variant="h6" sx={{ flexGrow: 1, fontWeight: 700 }}>
-            BugGenie
-          </Typography>
-          {PAGES.map((p) => (
-            <Button
-              key={p.key}
-              color="inherit"
-              onClick={() => setPage(p.key)}
-              sx={{ fontWeight: page === p.key ? 'bold' : 'normal' }}
-            >
-              {p.label}
-            </Button>
-          ))}
-        </Toolbar>
-      </AppBar>
       <Box sx={{ pt: 4, px: { xs: 1, sm: 3 }, width: '100%', minHeight: '100vh', background: 'inherit', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-        {page === 'landing' && (
-          <Box sx={{ width: '100%', maxWidth: 1200, mt: 2 }}>
-            <Typography variant="h4" sx={{ fontWeight: 700, mb: 2, fontSize: { xs: 28, sm: 32 } }}>Welcome to BugGenie</Typography>
-            <Typography variant="body1" paragraph>
-              BugGenie helps security researchers quickly generate high-quality bug bounty reports tailored to the requirements of major platforms.
-            </Typography>
-            <Typography variant="body2" color="text.secondary">
-              Use the navigation above to learn more or start generating your report!
-            </Typography>
+        <Box sx={{ width: '100%', maxWidth: 1200, mt: 2 }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
+            <img src={buggenieLogo} alt="BugGenie Logo" style={{ width: 96, marginRight: 16 }} />
+            <Typography variant="h4" sx={{ fontWeight: 700, fontSize: { xs: 28, sm: 32 } }}>BugGenie</Typography>
           </Box>
-        )}
-        {page === 'benefits' && (
-          <Box sx={{ width: '100%', maxWidth: 1200, mt: 2 }}>
-            <Typography variant="h4" sx={{ fontWeight: 700, mb: 2, fontSize: { xs: 28, sm: 32 } }}>Why BugGenie?</Typography>
-            <Typography variant="body1" paragraph>
-              BugGenie was built to save you time and effort by automating the report writing process. Focus on your findings, not on formatting!
-            </Typography>
-            <ul style={{ marginLeft: 24, marginBottom: 0 }}>
-              <li>AI-powered report generation</li>
-              <li>Platform-specific templates</li>
-              <li>Editable and exportable reports</li>
-              <li>Easy to use, no sign-up required</li>
-            </ul>
-          </Box>
-        )}
-        {page === 'main' && (
-          <Box sx={{ width: '100%', maxWidth: 1200, mt: 2 }}>
-            <Typography variant="h5" sx={{ fontWeight: 700, mb: 3, fontSize: { xs: 22, sm: 26 } }}>Generate Your Bug Bounty Report</Typography>
+          <Typography variant="body1" paragraph>
+            Generate high-quality bug bounty reports tailored to the requirements of major platforms using AI.
+          </Typography>
+          
             <Paper elevation={4} sx={{ p: { xs: 2, sm: 4 }, borderRadius: 3, boxShadow: 6, width: '100%' }}>
               <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3, width: '100%' }}>
                 <FormControl fullWidth>
@@ -209,12 +207,18 @@ function App() {
                 {platform && (
                   <FormControl fullWidth>
                     <InputLabel id="vrt-label">VRT Category</InputLabel>
-                    <Select
-                      labelId="vrt-label"
-                      value={category}
-                      label="VRT Category"
-                      onChange={(e) => setCategory(e.target.value)}
-                    >
+                                      <Select
+                    labelId="vrt-label"
+                    value={category}
+                    label="VRT Category"
+                    onChange={(e) => {
+                      setCategory(e.target.value);
+                      // Clear the editor content when category changes
+                      if (editor) {
+                        editor.commands.clearContent();
+                      }
+                    }}
+                  >
                       {vrtOptions.map((cat) => (
                         <MenuItem key={cat} value={cat}>{cat}</MenuItem>
                       ))}
@@ -222,25 +226,86 @@ function App() {
                   </FormControl>
                 )}
                 {platform && category && (
-                  <Paper elevation={2} sx={{ p: 2, minHeight: 200, background: '#23272f', mt: 2, width: '100%' }}>
-                    <Stack direction="row" spacing={2} mb={2}>
-                      <Button variant="contained" onClick={handleGenerateReport} disabled={loading}>
-                        {loading ? 'Generating...' : 'Generate Report'}
-                      </Button>
-                      <Button variant="outlined" onClick={handleExportPDF} disabled={!editor || !editor.getText().trim()}>
-                        Export to PDF
-                      </Button>
-                    </Stack>
-                    <Box sx={{ border: '1px solid #333', borderRadius: 2, background: '#181a20', p: 1, width: '100%' }}>
-                      <EditorContent editor={editor} />
-                    </Box>
-                  </Paper>
+                  <>
+                    <TextField
+                      fullWidth
+                      multiline
+                      rows={4}
+                      label="Vulnerability Details (Optional)"
+                      placeholder="Describe the vulnerability you found. Include details like: affected endpoint, payload used, expected vs actual behavior, impact, etc. Leave empty for a generic template."
+                      value={vulnerabilityDetails}
+                      onChange={(e) => setVulnerabilityDetails(e.target.value)}
+                      sx={{ mt: 2 }}
+                    />
+                    
+                    <Paper elevation={2} sx={{ p: 2, minHeight: 200, background: '#23272f', mt: 2, width: '100%' }}>
+                      <Stack direction="row" spacing={2} mb={2} flexWrap="wrap" useFlexGap>
+                        <Button variant="contained" onClick={handleGenerateReport} disabled={loading}>
+                          {loading ? 'Generating...' : 'Generate AI Report'}
+                        </Button>
+                        <Button variant="outlined" onClick={handleEnhanceReport} disabled={loading || !editor || !editor.getText().trim()}>
+                          {loading ? 'Enhancing...' : 'Enhance with AI'}
+                        </Button>
+                        <Button variant="outlined" onClick={handleExportPDF} disabled={!editor || !editor.getText().trim()}>
+                          Export to PDF
+                        </Button>
+                      </Stack>
+                      <Box sx={{ border: '1px solid #333', borderRadius: 2, background: '#181a20', p: 1, width: '100%' }}>
+                        <EditorContent editor={editor} />
+                      </Box>
+                    </Paper>
+                  </>
                 )}
               </Box>
             </Paper>
           </Box>
-        )}
       </Box>
+
+      {/* API Key Dialog */}
+      <Dialog open={showApiKeyDialog} onClose={() => setShowApiKeyDialog(false)} maxWidth="sm" fullWidth>
+        <DialogTitle>Enter Google Gemini API Key</DialogTitle>
+        <DialogContent>
+          <TextField
+            autoFocus
+            margin="dense"
+            label="Google Gemini API Key"
+            type="password"
+            fullWidth
+            variant="outlined"
+            value={apiKey}
+            onChange={(e) => setApiKey(e.target.value)}
+            placeholder="AIza..."
+            helperText="Your API key is stored locally and never sent to our servers."
+          />
+          <Box sx={{ mt: 2, display: 'flex', justifyContent: 'center' }}>
+            <Button 
+              variant="text" 
+              onClick={() => window.open('https://makersuite.google.com/app/apikey', '_blank')}
+              sx={{ textTransform: 'none' }}
+            >
+              🔑 How to get your Google Gemini API key?
+            </Button>
+          </Box>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setShowApiKeyDialog(false)}>Cancel</Button>
+          <Button onClick={handleApiKeySubmit} variant="contained">Save</Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Error Snackbar */}
+      <Snackbar open={!!error} autoHideDuration={6000} onClose={() => setError('')}>
+        <Alert onClose={() => setError('')} severity="error" sx={{ width: '100%' }}>
+          {error}
+        </Alert>
+      </Snackbar>
+
+      {/* Success Snackbar */}
+      <Snackbar open={!!success} autoHideDuration={4000} onClose={() => setSuccess('')}>
+        <Alert onClose={() => setSuccess('')} severity="success" sx={{ width: '100%' }}>
+          {success}
+        </Alert>
+      </Snackbar>
     </>
   );
 }
