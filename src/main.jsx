@@ -12,17 +12,17 @@ const darkTheme = createTheme({
           margin: 0,
           padding: 0,
           width: '100%',
-          height: '100vh', // Use vh for viewport height
+          
         },
         body: {
           margin: 0,
           padding: 0,
           width: '100%',
-          height: '100vh', // Use vh for viewport height
+          
         },
         '#root': {
            width: '100%',
-           height: '100vh', // Use vh for viewport height
+           
         },
       },
     },

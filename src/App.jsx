@@ -250,7 +250,7 @@ function App() {
                           Export to PDF
                         </Button>
                       </Stack>
-                      <Box sx={{ border: '1px solid #333', borderRadius: 2, background: '#181a20', p: 1, width: '100%' }}>
+                      <Box sx={{ border: '1px solid #333', borderRadius: 2, background: '#181a20', p: 3, width: '100%' }}>
                         <EditorContent editor={editor} />
                       </Box>
                     </Paper>
