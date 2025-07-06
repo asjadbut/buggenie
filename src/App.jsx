@@ -21,6 +21,12 @@ function App() {
   const [showApiKeyDialog, setShowApiKeyDialog] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
+  const [bugcrowdCategories, setBugcrowdCategories] = useState([]);
+  const [bugcrowdCategory, setBugcrowdCategory] = useState('');
+  const [bugcrowdSubcategories, setBugcrowdSubcategories] = useState([]);
+  const [bugcrowdSubcategory, setBugcrowdSubcategory] = useState('');
+  const [bugcrowdVariants, setBugcrowdVariants] = useState([]);
+  const [bugcrowdVariant, setBugcrowdVariant] = useState('');
 
   useEffect(() => {
     const selected = PLATFORMS.find((p) => p.key === platform);
@@ -31,6 +37,70 @@ function App() {
       editor.commands.clearContent();
     }
   }, [platform]);
+
+  // Load Bugcrowd VRT JSON dynamically when platform is bugcrowd
+  useEffect(() => {
+    if (platform === 'bugcrowd') {
+      fetch('/src/assets/bugcrowd-vrt.json')
+        .then(res => res.json())
+        .then(data => {
+          setBugcrowdCategories(data.content || []);
+        });
+      setBugcrowdCategory('');
+      setBugcrowdSubcategory('');
+      setBugcrowdVariant('');
+      setBugcrowdSubcategories([]);
+      setBugcrowdVariants([]);
+    } else {
+      setBugcrowdCategories([]);
+      setBugcrowdCategory('');
+      setBugcrowdSubcategory('');
+      setBugcrowdVariant('');
+      setBugcrowdSubcategories([]);
+      setBugcrowdVariants([]);
+    }
+    if (editor) {
+      editor.commands.clearContent();
+    }
+  }, [platform]);
+
+  // When Bugcrowd category changes, update subcategories
+  useEffect(() => {
+    if (platform === 'bugcrowd' && bugcrowdCategory) {
+      const cat = bugcrowdCategories.find(c => c.name === bugcrowdCategory);
+      setBugcrowdSubcategories(cat?.children || []);
+      setBugcrowdSubcategory('');
+      setBugcrowdVariant('');
+      setBugcrowdVariants([]);
+      setVulnerabilityDetails('');
+    }
+  }, [platform, bugcrowdCategory, bugcrowdCategories]);
+
+  // When Bugcrowd subcategory changes, update variants and handle 2-tier case
+  useEffect(() => {
+    if (platform === 'bugcrowd' && bugcrowdSubcategory) {
+      const cat = bugcrowdCategories.find(c => c.name === bugcrowdCategory);
+      const subcat = cat?.children?.find(s => s.name === bugcrowdSubcategory);
+      setBugcrowdVariants(subcat?.children || []);
+      setBugcrowdVariant('');
+      setVulnerabilityDetails('');
+      if (!subcat?.children || subcat.children.length === 0) {
+        setCategory(`${bugcrowdCategory} > ${bugcrowdSubcategory}`);
+      }
+    }
+  }, [platform, bugcrowdCategory, bugcrowdSubcategory, bugcrowdCategories]);
+
+  // When Bugcrowd variant changes, set the main category state to the full path
+  useEffect(() => {
+    if (
+      platform === 'bugcrowd' &&
+      bugcrowdCategory &&
+      bugcrowdSubcategory &&
+      bugcrowdVariant
+    ) {
+      setCategory(`${bugcrowdCategory} > ${bugcrowdSubcategory} > ${bugcrowdVariant}`);
+    }
+  }, [platform, bugcrowdCategory, bugcrowdSubcategory, bugcrowdVariant]);
 
   // TipTap editor setup
   const editor = useEditor({
@@ -49,7 +119,8 @@ function App() {
     }
 
     // Vulnerability details are optional - if not provided, use a generic template
-    const details = vulnerabilityDetails.trim() || `Generic ${category} vulnerability found in the application.`;
+    const fullBugcrowdCategory = platform === 'bugcrowd' && bugcrowdCategory && bugcrowdSubcategory && bugcrowdVariant ? `${bugcrowdCategory} > ${bugcrowdSubcategory} > ${bugcrowdVariant}` : '';
+    const details = vulnerabilityDetails.trim() || `Generic ${fullBugcrowdCategory || category} vulnerability found in the application.`;
 
     setLoading(true);
     setError('');
@@ -59,7 +130,7 @@ function App() {
       GeminiService.initialize(apiKey);
       
       // Generate report using AI
-      const aiReport = await GeminiService.generateReport(platform, category, details);
+      const aiReport = await GeminiService.generateReport(platform, fullBugcrowdCategory || category, details);
       
       // Convert AI response to TipTap format
       const tipTapContent = textToTipTapJson(aiReport);
@@ -177,6 +248,13 @@ function App() {
     doc.save('bug-bounty-report.pdf');
   };
 
+  const handleCopyReport = () => {
+    if (!editor) return;
+    const text = tipTapJsonToText(editor.getJSON());
+    navigator.clipboard.writeText(text);
+    setSuccess('Report copied to clipboard!');
+  };
+
   return (
     <>
       <Box sx={{ pt: 4, px: { xs: 1, sm: 3 }, width: '100%', minHeight: '100vh', background: 'inherit', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
@@ -204,28 +282,80 @@ function App() {
                     ))}
                   </Select>
                 </FormControl>
-                {platform && (
+                {platform === 'bugcrowd' && (
+                  <>
+                    <FormControl fullWidth sx={{ mb: 2 }}>
+                      <InputLabel id="bugcrowd-category-label">Category</InputLabel>
+                      <Select
+                        labelId="bugcrowd-category-label"
+                        value={bugcrowdCategory}
+                        label="Category"
+                        onChange={e => setBugcrowdCategory(e.target.value)}
+                      >
+                        {bugcrowdCategories.map(cat => (
+                          <MenuItem key={cat.id} value={cat.name}>{cat.name}</MenuItem>
+                        ))}
+                      </Select>
+                    </FormControl>
+                    {bugcrowdSubcategories.length > 0 && (
+                      <FormControl fullWidth sx={{ mb: 2 }}>
+                        <InputLabel id="bugcrowd-subcategory-label">Subcategory</InputLabel>
+                        <Select
+                          labelId="bugcrowd-subcategory-label"
+                          value={bugcrowdSubcategory}
+                          label="Subcategory"
+                          onChange={e => setBugcrowdSubcategory(e.target.value)}
+                        >
+                          {bugcrowdSubcategories.map(subcat => (
+                            <MenuItem key={subcat.id} value={subcat.name}>{subcat.name}</MenuItem>
+                          ))}
+                        </Select>
+                      </FormControl>
+                    )}
+                    {bugcrowdVariants.length > 0 && (
+                      <FormControl fullWidth sx={{ mb: 2 }}>
+                        <InputLabel id="bugcrowd-variant-label">Variant / Affected Function</InputLabel>
+                        <Select
+                          labelId="bugcrowd-variant-label"
+                          value={bugcrowdVariant}
+                          label="Variant / Affected Function"
+                          onChange={e => setBugcrowdVariant(e.target.value)}
+                        >
+                          {bugcrowdVariants.map(variant => (
+                            <MenuItem key={variant.id} value={variant.name}>{variant.name}</MenuItem>
+                          ))}
+                        </Select>
+                      </FormControl>
+                    )}
+                  </>
+                )}
+                {(platform === 'hackerone' || platform === 'google') && (
                   <FormControl fullWidth>
                     <InputLabel id="vrt-label">VRT Category</InputLabel>
-                                      <Select
-                    labelId="vrt-label"
-                    value={category}
-                    label="VRT Category"
-                    onChange={(e) => {
-                      setCategory(e.target.value);
-                      // Clear the editor content when category changes
-                      if (editor) {
-                        editor.commands.clearContent();
-                      }
-                    }}
-                  >
+                    <Select
+                      labelId="vrt-label"
+                      value={category}
+                      label="VRT Category"
+                      onChange={(e) => {
+                        setCategory(e.target.value);
+                        setVulnerabilityDetails('');
+                        if (editor) {
+                          editor.commands.clearContent();
+                        }
+                      }}
+                    >
                       {vrtOptions.map((cat) => (
                         <MenuItem key={cat} value={cat}>{cat}</MenuItem>
                       ))}
                     </Select>
                   </FormControl>
                 )}
-                {platform && category && (
+                {(
+                  (platform === 'bugcrowd' && bugcrowdCategory && bugcrowdSubcategory && (
+                    (bugcrowdVariants.length === 0) || bugcrowdVariant
+                  )) ||
+                  ((platform === 'hackerone' || platform === 'google') && category)
+                ) && (
                   <>
                     <TextField
                       fullWidth
@@ -245,6 +375,9 @@ function App() {
                         </Button>
                         <Button variant="outlined" onClick={handleEnhanceReport} disabled={loading || !editor || !editor.getText().trim()}>
                           {loading ? 'Enhancing...' : 'Enhance with AI'}
+                        </Button>
+                        <Button variant="outlined" onClick={handleCopyReport} disabled={!editor || !editor.getText().trim()}>
+                          Copy Report
                         </Button>
                         <Button variant="outlined" onClick={handleExportPDF} disabled={!editor || !editor.getText().trim()}>
                           Export to PDF
