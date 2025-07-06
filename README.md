@@ -1,4 +1,4 @@
-# <img src="src/assets/buggenie-logo.png" alt="BugGenie Logo" width="48" /> BugGenie
+# 🐛 BugGenie
 
 **AI-Powered Bug Bounty Report Generator**
 
