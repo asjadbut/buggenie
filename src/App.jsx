@@ -41,7 +41,7 @@ function App() {
   // Load Bugcrowd VRT JSON dynamically when platform is bugcrowd
   useEffect(() => {
     if (platform === 'bugcrowd') {
-      fetch('/src/assets/bugcrowd-vrt.json')
+      fetch('/bugcrowd-vrt.json')
         .then(res => res.json())
         .then(data => {
           setBugcrowdCategories(data.content || []);
