@@ -331,6 +331,9 @@ function App() {
                   </Button>
                 </Box>
               </Box>
+              <Typography variant="body1" paragraph>
+                Generate, analyze, and track bug bounty reports with AI—complete with platform-specific templates, bounty estimation, and Gemini usage tracking.
+              </Typography>
               {showGeminiInfo && (
                 <Alert
                   severity={geminiUsage > 1200 ? 'warning' : 'info'}
@@ -357,9 +360,6 @@ function App() {
                   )}
                 </Alert>
               )}
-              <Typography variant="body1" paragraph>
-                Generate, analyze, and track bug bounty reports with AI—complete with platform-specific templates, bounty estimation, and Gemini usage tracking.
-              </Typography>
               
               {/* Bounty Analysis Toggle */}
               <Box sx={{ mb: 2, display: 'flex', alignItems: 'center', gap: 2, justifyContent: 'space-between' }}>
