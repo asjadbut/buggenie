@@ -20,6 +20,17 @@ BugGenie is a modern web application that helps security researchers quickly gen
 - **Platform policy insights** with detailed requirements and rejection reasons
 - **Smart recommendations** to improve report acceptance chances
 
+### 🧑‍🎓 Learning Mode (NEW)
+- **AI-powered vulnerability learning cards** for every platform and category
+- **Concise or detailed explanations** for each vulnerability type
+- **Real-world examples, how-to-find, and remediation tips**
+- **Interactive VRT navigation** for Bugcrowd, HackerOne, and Google VRP
+
+### 📊 Gemini Usage Tracking (NEW)
+- **Daily Gemini API usage tracking** with real-time quota display
+- **Warnings as you approach free tier limits** (1,500 requests/day, 15/min)
+- **Usage tracked locally in your browser for privacy**
+
 ### 🎯 Platform Support
 - **Bugcrowd** - Official 3-level VRT selection (Category > Subcategory > Variant/Affected Function)
   - Handles edge cases where some subcategories have no variants (2-tier selection)
@@ -38,6 +49,7 @@ BugGenie is a modern web application that helps security researchers quickly gen
 - **Local API key storage** - Your keys stay in your browser
 - **No data collection** - Complete privacy
 - **Free tier support** - Uses Google Gemini's generous free limits
+- **Gemini usage tracked locally only** (never sent to any server)
 
 ## 🚀 Quick Start
 
@@ -109,6 +121,18 @@ Choose your target platform:
 - **Copy Report**: Copies the plain text report to clipboard
 - **Export to PDF**: Downloads the report as a PDF
 
+### 6. Use Learning Mode (NEW)
+- Click the **Learning** button in the top right of the app
+- Select a platform and vulnerability type (full VRT navigation for Bugcrowd)
+- Instantly view an **AI-generated learning card** for the selected vulnerability
+- Toggle between **Concise** and **Detailed** learning cards for more or less depth
+- Each card includes: summary, how it works, real-world example, how to find, and remediation tips
+
+### 7. Monitor Gemini Usage (NEW)
+- Your daily Gemini API usage is shown at the top of the app
+- Warnings appear as you approach the free tier quota (1,500 requests/day, 15/min)
+- Usage is tracked **locally in your browser** for privacy
+
 ## 🛠️ Technology Stack
 
 - **Frontend**: React 19 + Vite
@@ -139,6 +163,11 @@ Choose your target platform:
 - **No credit card required** - Completely free to start
 - **Cost-effective** - Perfect for bug bounty researchers
 
+### Gemini Usage Tracking
+- **Your Gemini API usage is tracked locally in your browser only**
+- **No usage data is ever sent to any server**
+- **You are warned as you approach your daily quota**
+
 ## 📁 Project Structure
 
 ```
@@ -148,12 +177,14 @@ buggenie/
 │   │   └── bugcrowd-vrt.json         # Official Bugcrowd VRT taxonomy
 │   ├── components/
 │   │   └── BountyAnalysis.jsx        # Bounty estimation and analysis component
+│   │   └── LearningCard.jsx         # AI-powered learning card component (NEW)
 │   ├── services/
 │   │   ├── gemini.js                # Google Gemini AI service
 │   │   └── bountyEstimator.js       # Bounty estimation and acceptance analysis
 │   ├── utils/
 │   │   └── textToTipTap.js          # Text conversion utilities
 │   ├── platforms.js                 # Platform and VRT categories
+│   ├── LearningPage.jsx             # Learning mode page (NEW)
 │   └── App.jsx                      # Main application component
 ├── public/                          # Static assets
 ├── package.json                     # Dependencies and scripts
