@@ -18,6 +18,7 @@ class GeminiService {
   }
 
   async generateReport(platform, category, vulnerabilityDetails) {
+    incrementGeminiUsageCount();
     if (!this.isInitialized || !this.model) {
       throw new Error('Gemini service not initialized. Please provide an API key.');
     }
@@ -106,6 +107,7 @@ Focus on creating clean, professional content that can be directly used in the r
   }
 
   async enhanceReport(existingContent, platform, category) {
+    incrementGeminiUsageCount();
     if (!this.isInitialized || !this.model) {
       throw new Error('Gemini service not initialized. Please provide an API key.');
     }
@@ -155,6 +157,7 @@ Focus on clean, professional content that can be directly used.`;
   }
 
   async getBountyAnalysis(platform, category) {
+    incrementGeminiUsageCount();
     if (!this.isInitialized || !this.model) {
       throw new Error('Gemini service not initialized. Please provide an API key.');
     }
@@ -205,6 +208,23 @@ Base your analysis on real platform data and current bug bounty market rates.`;
       throw new Error(`Failed to get bounty analysis: ${error.message}`);
     }
   }
+}
+
+// Gemini usage counter utilities
+function getGeminiUsageKey() {
+  const today = new Date().toISOString().slice(0, 10); // YYYY-MM-DD
+  return `gemini_usage_${today}`;
+}
+
+export function getGeminiUsageCount() {
+  const key = getGeminiUsageKey();
+  return parseInt(localStorage.getItem(key) || '0', 10);
+}
+
+export function incrementGeminiUsageCount() {
+  const key = getGeminiUsageKey();
+  const current = getGeminiUsageCount();
+  localStorage.setItem(key, (current + 1).toString());
 }
 
 export default new GeminiService(); 

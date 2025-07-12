@@ -8,6 +8,8 @@ import GeminiService from './services/gemini';
 import BountyAnalysis from './components/BountyAnalysis';
 import { textToTipTapJson, tipTapJsonToText } from './utils/textToTipTap';
 import buggenieLogo from './assets/buggenie-logo.png';
+import { getGeminiUsageCount } from './services/gemini';
+import { InfoOutlined } from '@mui/icons-material';
 
 function App() {
   const [platform, setPlatform] = useState('');
@@ -36,6 +38,7 @@ function App() {
   const [showGeminiInfo, setShowGeminiInfo] = useState(() => {
     return localStorage.getItem('hide_gemini_info') !== '1';
   });
+  const [geminiUsage, setGeminiUsage] = useState(getGeminiUsageCount());
 
   useEffect(() => {
     const selected = PLATFORMS.find((p) => p.key === platform);
@@ -135,6 +138,14 @@ function App() {
     fetchAnalysis();
     return () => { cancelled = true; };
   }, [platform, category, apiKey]);
+
+  // Update Gemini usage counter reactively
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setGeminiUsage(getGeminiUsageCount());
+    }, 2000); // update every 2 seconds
+    return () => clearInterval(interval);
+  }, []);
 
   // TipTap editor setup
   const editor = useEditor({
@@ -298,27 +309,46 @@ function App() {
     <>
       <Box sx={{ pt: 4, px: { xs: 1, sm: 3 }, width: '100%', minHeight: '100vh', background: 'inherit', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
         <Box sx={{ width: '100%', maxWidth: 1200, mt: 2 }}>
-          <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-            <img src={buggenieLogo} alt="BugGenie Logo" style={{ width: 96, marginRight: 16 }} />
-            <Typography variant="h4" sx={{ fontWeight: 700, fontSize: { xs: 28, sm: 32 } }}>BugGenie</Typography>
+          <Box sx={{ display: 'flex', alignItems: 'center', mb: 2, justifyContent: 'space-between' }}>
+            <Box sx={{ display: 'flex', alignItems: 'center' }}>
+              <img src={buggenieLogo} alt="BugGenie Logo" style={{ width: 96, marginRight: 16 }} />
+              <Typography variant="h4" sx={{ fontWeight: 700, fontSize: { xs: 28, sm: 32 } }}>BugGenie</Typography>
+            </Box>
+            {!showGeminiInfo && (
+              <Button
+                size="small"
+                variant="text"
+                startIcon={<InfoOutlined />}
+                onClick={() => {
+                  setShowGeminiInfo(true);
+                  localStorage.setItem('hide_gemini_info', '0');
+                }}
+                sx={{ ml: 2 }}
+              >
+                Show Gemini Info
+              </Button>
+            )}
           </Box>
           {showGeminiInfo && (
             <Alert
-              severity="info"
+              severity={geminiUsage > 1200 ? 'warning' : 'info'}
               sx={{ mb: 2, fontSize: '0.97em', alignItems: 'center' }}
               onClose={() => {
                 setShowGeminiInfo(false);
                 localStorage.setItem('hide_gemini_info', '1');
               }}
             >
-              <strong>Gemini 2.0 Flash Free Tier:</strong> 15 requests/minute, 1,500 requests/day. No credit card required. &nbsp;
-              <Link href="https://ai.google.dev/pricing" target="_blank" rel="noopener" underline="hover">
-                See details
-              </Link>
+              <strong>Gemini 2.0 Flash Free Tier:</strong>
+              <Box component="span" sx={{ fontWeight: 600, color: geminiUsage > 1200 ? '#d32f2f' : '#1976d2', ml: 1 }}>
+                {geminiUsage} / 1,500 requests used today
+              </Box>
+              <span style={{ marginLeft: 8, color: '#555' }}>
+                (15 requests/minute limit)
+              </span>
             </Alert>
           )}
           <Typography variant="body1" paragraph>
-            Generate high-quality bug bounty reports tailored to the requirements of major platforms using AI.
+            Generate, analyze, and track bug bounty reports with AI—complete with platform-specific templates, bounty estimation, and Gemini usage tracking.
           </Typography>
           
           {/* Bounty Analysis Toggle */}
