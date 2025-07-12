@@ -76,15 +76,30 @@ const LearningPage = ({ onBack }) => {
     }
   }, [platform, bugcrowdCategory, bugcrowdSubcategory, bugcrowdCategories]);
 
-  // Determine the most specific selection
+  // Determine the most specific selection (only when complete for Bugcrowd)
   let mostSpecific = '';
+  let bugcrowdSelectionComplete = false;
   if (platform === 'bugcrowd') {
-    if (bugcrowdVariant) {
-      mostSpecific = `${bugcrowdCategory} > ${bugcrowdSubcategory} > ${bugcrowdVariant}`;
-    } else if (bugcrowdSubcategory) {
-      mostSpecific = `${bugcrowdCategory} > ${bugcrowdSubcategory}`;
-    } else if (bugcrowdCategory) {
-      mostSpecific = bugcrowdCategory;
+    if (bugcrowdCategory) {
+      const cat = bugcrowdCategories.find(c => c.name === bugcrowdCategory);
+      if (bugcrowdSubcategory) {
+        const subcat = cat?.children?.find(s => s.name === bugcrowdSubcategory);
+        if (subcat && subcat.children && subcat.children.length > 0) {
+          // Variants exist for this subcategory
+          if (bugcrowdVariant) {
+            mostSpecific = `${bugcrowdCategory} > ${bugcrowdSubcategory} > ${bugcrowdVariant}`;
+            bugcrowdSelectionComplete = true;
+          }
+        } else {
+          // No variants for this subcategory
+          mostSpecific = `${bugcrowdCategory} > ${bugcrowdSubcategory}`;
+          bugcrowdSelectionComplete = true;
+        }
+      } else if (cat && (!cat.children || cat.children.length === 0)) {
+        // No subcategories for this category
+        mostSpecific = bugcrowdCategory;
+        bugcrowdSelectionComplete = true;
+      }
     }
   } else if ((platform === 'hackerone' || platform === 'google') && category) {
     mostSpecific = category;
@@ -92,6 +107,12 @@ const LearningPage = ({ onBack }) => {
 
   // Fetch learning card when most specific selection or mode changes
   useEffect(() => {
+    if (platform === 'bugcrowd' && !bugcrowdSelectionComplete) {
+      setCard(null);
+      setLoading(false);
+      setError('');
+      return;
+    }
     if (!mostSpecific) return;
     setCard(null);
     setError('');
@@ -101,7 +122,7 @@ const LearningPage = ({ onBack }) => {
       .then(result => setCard(result))
       .catch(e => setError(e.message))
       .finally(() => setLoading(false));
-  }, [mostSpecific, mode]);
+  }, [mostSpecific, mode, platform, bugcrowdSelectionComplete]);
 
   return (
     <Box sx={{ width: '100%', minHeight: '100vh', display: 'flex', flexDirection: { xs: 'column', md: 'row' }, alignItems: 'stretch', p: { xs: 0, sm: 3 } }}>
