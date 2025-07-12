@@ -208,6 +208,37 @@ Base your analysis on real platform data and current bug bounty market rates.`;
       throw new Error(`Failed to get bounty analysis: ${error.message}`);
     }
   }
+
+  async getLearningCard(vulnType) {
+    incrementGeminiUsageCount();
+    if (!this.isInitialized || !this.model) {
+      throw new Error('Gemini service not initialized. Please provide an API key.');
+    }
+    const prompt = `Create a concise, practical learning card for the vulnerability type: "${vulnType}". Structure the response as JSON with these keys:
+{
+  "title": string,
+  "summary": string,
+  "how_it_works": string,
+  "real_world_example": string,
+  "how_to_find": string,
+  "remediation_tips": string
+}
+Each section should be clear, actionable, and suitable for security researchers. Do not include any extra text outside the JSON.`;
+    try {
+      const result = await this.model.generateContent(prompt);
+      const response = await result.response;
+      const text = response.text();
+      const jsonMatch = text.match(/\{[\s\S]*\}/);
+      if (jsonMatch) {
+        return JSON.parse(jsonMatch[0]);
+      } else {
+        throw new Error('Gemini did not return valid JSON.');
+      }
+    } catch (error) {
+      console.error('Gemini API Error:', error);
+      throw new Error(`Failed to get learning card: ${error.message}`);
+    }
+  }
 }
 
 // Gemini usage counter utilities

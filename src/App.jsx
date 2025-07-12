@@ -10,6 +10,7 @@ import { textToTipTapJson, tipTapJsonToText } from './utils/textToTipTap';
 import buggenieLogo from './assets/buggenie-logo.png';
 import { getGeminiUsageCount } from './services/gemini';
 import { InfoOutlined } from '@mui/icons-material';
+import LearningPage from './LearningPage';
 
 function App() {
   const [platform, setPlatform] = useState('');
@@ -39,6 +40,7 @@ function App() {
     return localStorage.getItem('hide_gemini_info') !== '1';
   });
   const [geminiUsage, setGeminiUsage] = useState(getGeminiUsageCount());
+  const [page, setPage] = useState('main');
 
   useEffect(() => {
     const selected = PLATFORMS.find((p) => p.key === platform);
@@ -307,75 +309,97 @@ function App() {
 
   return (
     <>
-      <Box sx={{ pt: 4, px: { xs: 1, sm: 3 }, width: '100%', minHeight: '100vh', background: 'inherit', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-        <Box sx={{ width: '100%', maxWidth: 1200, mt: 2 }}>
-          <Box sx={{ display: 'flex', alignItems: 'center', mb: 2, justifyContent: 'space-between' }}>
-            <Box sx={{ display: 'flex', alignItems: 'center' }}>
-              <img src={buggenieLogo} alt="BugGenie Logo" style={{ width: 96, marginRight: 16 }} />
-              <Typography variant="h4" sx={{ fontWeight: 700, fontSize: { xs: 28, sm: 32 } }}>BugGenie</Typography>
-            </Box>
-            {!showGeminiInfo && (
-              <Button
-                size="small"
-                variant="text"
-                startIcon={<InfoOutlined />}
-                onClick={() => {
-                  setShowGeminiInfo(true);
-                  localStorage.setItem('hide_gemini_info', '0');
-                }}
-                sx={{ ml: 2 }}
-              >
-                Show Gemini Info
-              </Button>
-            )}
-          </Box>
-          {showGeminiInfo && (
-            <Alert
-              severity={geminiUsage > 1200 ? 'warning' : 'info'}
-              sx={{ mb: 2, fontSize: '0.97em', alignItems: 'center' }}
-              onClose={() => {
-                setShowGeminiInfo(false);
-                localStorage.setItem('hide_gemini_info', '1');
-              }}
-            >
-              <strong>Gemini 2.0 Flash Free Tier:</strong>
-              <Box component="span" sx={{ fontWeight: 600, color: geminiUsage > 1200 ? '#d32f2f' : '#1976d2', ml: 1 }}>
-                {geminiUsage} / 1,500 requests used today
+      {page === 'learning' ? (
+        <LearningPage onBack={() => setPage('main')} />
+      ) : (
+        <>
+          <Box sx={{ pt: 4, px: { xs: 1, sm: 3 }, width: '100%', minHeight: '100vh', background: 'inherit', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+            <Box sx={{ width: '100%', maxWidth: 1200, mt: 2 }}>
+              <Box sx={{ display: 'flex', alignItems: 'center', mb: 2, justifyContent: 'space-between' }}>
+                <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                  <img src={buggenieLogo} alt="BugGenie Logo" style={{ width: 96, marginRight: 16 }} />
+                  <Typography variant="h4" sx={{ fontWeight: 700, fontSize: { xs: 28, sm: 32 } }}>BugGenie</Typography>
+                </Box>
+                <Box>
+                  <Button
+                    size="small"
+                    variant="outlined"
+                    sx={{ mr: 1, fontWeight: 600 }}
+                    onClick={() => setPage('learning')}
+                  >
+                    Learning
+                  </Button>
+                  {!showGeminiInfo && (
+                    <Button
+                      size="small"
+                      variant="text"
+                      startIcon={<InfoOutlined />}
+                      onClick={() => {
+                        setShowGeminiInfo(true);
+                        localStorage.setItem('hide_gemini_info', '0');
+                      }}
+                      sx={{ ml: 2 }}
+                    >
+                      Show Gemini Info
+                    </Button>
+                  )}
+                </Box>
               </Box>
-              <span style={{ marginLeft: 8, color: '#555' }}>
-                (15 requests/minute limit)
-              </span>
-            </Alert>
-          )}
-          <Typography variant="body1" paragraph>
-            Generate, analyze, and track bug bounty reports with AI—complete with platform-specific templates, bounty estimation, and Gemini usage tracking.
-          </Typography>
-          
-          {/* Bounty Analysis Toggle */}
-          <Box sx={{ mb: 2, display: 'flex', alignItems: 'center', gap: 2 }}>
-            <FormControlLabel
-              control={
-                <Switch
-                  checked={showBountyAnalysis}
-                  onChange={(e) => setShowBountyAnalysis(e.target.checked)}
-                  color="primary"
+              {showGeminiInfo && (
+                <Alert
+                  severity={geminiUsage > 1200 ? 'warning' : 'info'}
+                  sx={{ mb: 2, fontSize: '0.97em', alignItems: 'center' }}
+                  onClose={() => {
+                    setShowGeminiInfo(false);
+                    localStorage.setItem('hide_gemini_info', '1');
+                  }}
+                >
+                  <strong>Gemini 2.0 Flash Free Tier:</strong>
+                  <Box component="span" sx={{ fontWeight: 600, color: geminiUsage > 1200 ? '#d32f2f' : '#1976d2', ml: 1 }}>
+                    {geminiUsage} / 1,500 requests used today
+                  </Box>
+                  <span style={{ marginLeft: 8, color: '#555' }}>
+                    (15 requests/minute limit)
+                  </span>
+                  <Link href="https://ai.google.dev/pricing" target="_blank" rel="noopener" underline="hover" sx={{ ml: 1 }}>
+                    See details
+                  </Link>
+                  {geminiUsage > 1200 && (
+                    <Box component="span" sx={{ color: '#d32f2f', fontWeight: 600, ml: 2 }}>
+                      Warning: You are approaching your daily quota!
+                    </Box>
+                  )}
+                </Alert>
+              )}
+              <Typography variant="body1" paragraph>
+                Generate, analyze, and track bug bounty reports with AI—complete with platform-specific templates, bounty estimation, and Gemini usage tracking.
+              </Typography>
+              
+              {/* Bounty Analysis Toggle */}
+              <Box sx={{ mb: 2, display: 'flex', alignItems: 'center', gap: 2 }}>
+                <FormControlLabel
+                  control={
+                    <Switch
+                      checked={showBountyAnalysis}
+                      onChange={(e) => setShowBountyAnalysis(e.target.checked)}
+                      color="primary"
+                    />
+                  }
+                  label="Show Bounty Analysis"
                 />
-              }
-              label="Show Bounty Analysis"
-            />
-            {showBountyAnalysis && (
-              <FormControlLabel
-                control={
-                  <Switch
-                    checked={showDetailedPolicies}
-                    onChange={(e) => setShowDetailedPolicies(e.target.checked)}
-                    color="secondary"
+                {showBountyAnalysis && (
+                  <FormControlLabel
+                    control={
+                      <Switch
+                        checked={showDetailedPolicies}
+                        onChange={(e) => setShowDetailedPolicies(e.target.checked)}
+                        color="secondary"
+                      />
+                    }
+                    label="Show Detailed Policies"
                   />
-                }
-                label="Show Detailed Policies"
-              />
-            )}
-          </Box>
+                )}
+              </Box>
 
                     <Paper elevation={4} sx={{ p: { xs: 2, sm: 4 }, borderRadius: 3, boxShadow: 6, width: '100%' }}>
             <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3, width: '100%' }}>
@@ -533,7 +557,19 @@ function App() {
               </Box>
             </Paper>
           </Box>
-      </Box>
+          </Box> {/* Close maxWidth: 1200 Box */}
+          <Snackbar open={!!error} autoHideDuration={6000} onClose={() => setError('')}>
+            <Alert onClose={() => setError('')} severity="error" sx={{ width: '100%' }}>
+              {error}
+            </Alert>
+          </Snackbar>
+          <Snackbar open={!!success} autoHideDuration={4000} onClose={() => setSuccess('')}>
+            <Alert onClose={() => setSuccess('')} severity="success" sx={{ width: '100%' }}>
+              {success}
+            </Alert>
+          </Snackbar>
+        </>
+      )}
 
       {/* API Key Dialog */}
       <Dialog open={showApiKeyDialog} onClose={() => setShowApiKeyDialog(false)} maxWidth="sm" fullWidth>
@@ -566,20 +602,6 @@ function App() {
           <Button onClick={handleApiKeySubmit} variant="contained">Save</Button>
         </DialogActions>
       </Dialog>
-
-      {/* Error Snackbar */}
-      <Snackbar open={!!error} autoHideDuration={6000} onClose={() => setError('')}>
-        <Alert onClose={() => setError('')} severity="error" sx={{ width: '100%' }}>
-          {error}
-        </Alert>
-      </Snackbar>
-
-      {/* Success Snackbar */}
-      <Snackbar open={!!success} autoHideDuration={4000} onClose={() => setSuccess('')}>
-        <Alert onClose={() => setSuccess('')} severity="success" sx={{ width: '100%' }}>
-          {success}
-        </Alert>
-      </Snackbar>
     </>
   );
 }
