@@ -183,7 +183,7 @@ const BountyAnalysis = ({ analysis, showDetails = false }) => {
               {safeAnalysis.acceptance.factors.map((factor, index) => (
                 <Chip 
                   key={index}
-                  label={factor} 
+                  label={factor}
                   size="small" 
                   color="success" 
                   variant="outlined"
@@ -226,9 +226,9 @@ const BountyAnalysis = ({ analysis, showDetails = false }) => {
 
       {/* Platform Policies - Concise */}
       {showDetails && safeAnalysis.policies && (
-        <Paper elevation={0} sx={{ mt: 2, p: 1.5, background: '#f0f4f8', borderRadius: 2, color: '#222', border: '1px solid #e0e4ea' }}>
-          <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 1, display: 'flex', alignItems: 'center', color: '#1976d2', fontSize: '0.9rem' }}>
-            <Policy sx={{ mr: 0.5, fontSize: '1rem', color: '#1976d2' }} />
+        <Paper elevation={0} sx={{ mt: 2, p: 1.5, background: '#23272f', color: '#fff', borderRadius: 2, border: '1px solid #333' }}>
+          <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 1, display: 'flex', alignItems: 'center', color: '#90caf9', fontSize: '0.9rem' }}>
+            <Policy sx={{ mr: 0.5, fontSize: '1rem', color: '#90caf9' }} />
             Platform Policies
           </Typography>
           {/* Required */}

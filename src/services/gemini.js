@@ -209,12 +209,25 @@ Base your analysis on real platform data and current bug bounty market rates.`;
     }
   }
 
-  async getLearningCard(vulnType) {
+  async getLearningCard(vulnType, mode = 'concise') {
     incrementGeminiUsageCount();
     if (!this.isInitialized || !this.model) {
       throw new Error('Gemini service not initialized. Please provide an API key.');
     }
-    const prompt = `Create a concise, practical learning card for the vulnerability type: "${vulnType}". Structure the response as JSON with these keys:
+    let prompt;
+    if (mode === 'detailed') {
+      prompt = `Create a DETAILED, practical learning card for the vulnerability type: "${vulnType}". Structure the response as JSON with these keys:
+{
+  "title": string,
+  "summary": string,
+  "how_it_works": string,
+  "real_world_example": string,
+  "how_to_find": string,
+  "remediation_tips": string
+}
+Each section should be thorough, actionable, and suitable for security researchers. Include technical depth, real-world context, and advanced tips. Do not include any extra text outside the JSON.`;
+    } else {
+      prompt = `Create a concise, practical learning card for the vulnerability type: "${vulnType}". Structure the response as JSON with these keys:
 {
   "title": string,
   "summary": string,
@@ -224,6 +237,7 @@ Base your analysis on real platform data and current bug bounty market rates.`;
   "remediation_tips": string
 }
 Each section should be clear, actionable, and suitable for security researchers. Do not include any extra text outside the JSON.`;
+    }
     try {
       const result = await this.model.generateContent(prompt);
       const response = await result.response;
