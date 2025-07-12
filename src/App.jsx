@@ -321,20 +321,6 @@ function App() {
                   <Typography variant="h4" sx={{ fontWeight: 700, fontSize: { xs: 28, sm: 32 } }}>BugGenie</Typography>
                 </Box>
                 <Box>
-                  {!showGeminiInfo && (
-                    <Button
-                      size="small"
-                      variant="text"
-                      startIcon={<InfoOutlined />}
-                      onClick={() => {
-                        setShowGeminiInfo(true);
-                        localStorage.setItem('hide_gemini_info', '0');
-                      }}
-                      sx={{ mr: 1 }}
-                    >
-                      Show Gemini Info
-                    </Button>
-                  )}
                   <Button
                     size="small"
                     variant="outlined"
@@ -376,28 +362,43 @@ function App() {
               </Typography>
               
               {/* Bounty Analysis Toggle */}
-              <Box sx={{ mb: 2, display: 'flex', alignItems: 'center', gap: 2 }}>
-                <FormControlLabel
-                  control={
-                    <Switch
-                      checked={showBountyAnalysis}
-                      onChange={(e) => setShowBountyAnalysis(e.target.checked)}
-                      color="primary"
-                    />
-                  }
-                  label="Show Bounty Analysis"
-                />
-                {showBountyAnalysis && (
+              <Box sx={{ mb: 2, display: 'flex', alignItems: 'center', gap: 2, justifyContent: 'space-between' }}>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
                   <FormControlLabel
                     control={
                       <Switch
-                        checked={showDetailedPolicies}
-                        onChange={(e) => setShowDetailedPolicies(e.target.checked)}
-                        color="secondary"
+                        checked={showBountyAnalysis}
+                        onChange={(e) => setShowBountyAnalysis(e.target.checked)}
+                        color="primary"
                       />
                     }
-                    label="Show Detailed Policies"
+                    label="Show Bounty Analysis"
                   />
+                  {showBountyAnalysis && (
+                    <FormControlLabel
+                      control={
+                        <Switch
+                          checked={showDetailedPolicies}
+                          onChange={(e) => setShowDetailedPolicies(e.target.checked)}
+                          color="secondary"
+                        />
+                      }
+                      label="Show Detailed Policies"
+                    />
+                  )}
+                </Box>
+                {!showGeminiInfo && (
+                  <Button
+                    size="small"
+                    variant="text"
+                    startIcon={<InfoOutlined />}
+                    onClick={() => {
+                      setShowGeminiInfo(true);
+                      localStorage.setItem('hide_gemini_info', '0');
+                    }}
+                  >
+                    Show Gemini Info
+                  </Button>
                 )}
               </Box>
 

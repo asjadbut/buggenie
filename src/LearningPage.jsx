@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { Box, Typography, TextField, MenuItem, Button, Paper, FormControl, InputLabel, Select, CircularProgress, ToggleButton, ToggleButtonGroup } from '@mui/material';
+import { Box, Typography, TextField, MenuItem, Button, Paper, FormControl, InputLabel, Select, CircularProgress, ToggleButton, ToggleButtonGroup, Alert } from '@mui/material';
 import { PLATFORMS } from './platforms';
 import GeminiService from './services/gemini';
 import LearningCard from './components/LearningCard';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
+import { InfoOutlined } from '@mui/icons-material';
 
 const LearningPage = ({ onBack }) => {
   const [platform, setPlatform] = useState('');
@@ -22,6 +23,7 @@ const LearningPage = ({ onBack }) => {
   const [error, setError] = useState('');
   const [vrtLoading, setVrtLoading] = useState(false);
   const [mode, setMode] = useState('concise'); // 'concise' or 'detailed'
+  // Remove showGeminiInfo state
 
   // Load VRT options for HackerOne/Google
   useEffect(() => {
@@ -233,7 +235,7 @@ const LearningPage = ({ onBack }) => {
       </Box>
       {/* Right: Learning Card */}
       <Box sx={{ flex: 1, p: { xs: 2, md: 4 }, display: 'flex', flexDirection: 'column', alignItems: 'stretch', justifyContent: 'flex-start', minHeight: '100vh' }}>
-        <Box sx={{ mb: 2, display: 'flex', justifyContent: 'flex-end' }}>
+        <Box sx={{ mb: 2, display: 'flex', justifyContent: 'flex-end', alignItems: 'center' }}>
           <ToggleButtonGroup
             value={mode}
             exclusive
