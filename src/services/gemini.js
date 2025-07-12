@@ -153,6 +153,58 @@ Focus on clean, professional content that can be directly used.`;
       throw new Error(`Failed to enhance report: ${error.message}`);
     }
   }
+
+  async getBountyAnalysis(platform, category) {
+    if (!this.isInitialized || !this.model) {
+      throw new Error('Gemini service not initialized. Please provide an API key.');
+    }
+
+    const prompt = `For the ${platform} bug bounty platform, and the vulnerability category "${category}", please provide a comprehensive analysis.
+
+Please return your answer in EXACT JSON format with this structure:
+{
+  "platform": "${platform}",
+  "category": "${category}",
+  "severity": "critical|high|medium|low|info",
+  "bounty": {
+    "min": 100,
+    "max": 5000,
+    "avg": 1500
+  },
+  "acceptance": {
+    "probability": 85,
+    "factors": ["Clear PoC", "Business Impact", "Technical Detail"],
+    "recommendations": ["Include clear reproduction steps", "Add business impact analysis"]
+  },
+  "policies": {
+    "requirements": ["Clear reproduction steps", "Proof of concept"],
+    "preferences": ["Business context", "Technical depth"],
+    "rejections": ["Duplicate reports", "Out of scope"]
+  }
+}
+
+Base your analysis on real platform data and current bug bounty market rates.`;
+
+    try {
+      const result = await this.model.generateContent(prompt);
+      const response = await result.response;
+      // Try to extract JSON from the response
+      const text = response.text();
+      const jsonMatch = text.match(/\{[\s\S]*\}/);
+      if (jsonMatch) {
+        const parsed = JSON.parse(jsonMatch[0]);
+        // Add platform and category if not present
+        if (!parsed.platform) parsed.platform = platform;
+        if (!parsed.category) parsed.category = category;
+        return parsed;
+      } else {
+        throw new Error('Gemini did not return valid JSON.');
+      }
+    } catch (error) {
+      console.error('Gemini API Error:', error);
+      throw new Error(`Failed to get bounty analysis: ${error.message}`);
+    }
+  }
 }
 
 export default new GeminiService(); 

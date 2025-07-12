@@ -1,10 +1,11 @@
 import { useState, useEffect } from 'react';
-import { AppBar, Toolbar, Typography, Button, Box, Container, MenuItem, Select, FormControl, InputLabel, Paper, Stack, TextField, Alert, Snackbar, Dialog, DialogTitle, DialogContent, DialogActions } from '@mui/material';
+import { AppBar, Toolbar, Typography, Button, Box, Container, MenuItem, Select, FormControl, InputLabel, Paper, Stack, TextField, Alert, Snackbar, Dialog, DialogTitle, DialogContent, DialogActions, Switch, FormControlLabel, Link } from '@mui/material';
 import { PLATFORMS } from './platforms';
 import { useEditor, EditorContent } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import jsPDF from 'jspdf';
 import GeminiService from './services/gemini';
+import BountyAnalysis from './components/BountyAnalysis';
 import { textToTipTapJson, tipTapJsonToText } from './utils/textToTipTap';
 import buggenieLogo from './assets/buggenie-logo.png';
 
@@ -27,6 +28,14 @@ function App() {
   const [bugcrowdSubcategory, setBugcrowdSubcategory] = useState('');
   const [bugcrowdVariants, setBugcrowdVariants] = useState([]);
   const [bugcrowdVariant, setBugcrowdVariant] = useState('');
+  const [bountyAnalysis, setBountyAnalysis] = useState(null);
+  const [bountyLoading, setBountyLoading] = useState(false);
+  const [bountyError, setBountyError] = useState('');
+  const [showBountyAnalysis, setShowBountyAnalysis] = useState(true);
+  const [showDetailedPolicies, setShowDetailedPolicies] = useState(false);
+  const [showGeminiInfo, setShowGeminiInfo] = useState(() => {
+    return localStorage.getItem('hide_gemini_info') !== '1';
+  });
 
   useEffect(() => {
     const selected = PLATFORMS.find((p) => p.key === platform);
@@ -102,6 +111,31 @@ function App() {
     }
   }, [platform, bugcrowdCategory, bugcrowdSubcategory, bugcrowdVariant]);
 
+  // Fetch bounty analysis from Gemini when platform or category changes
+  useEffect(() => {
+    let cancelled = false;
+    async function fetchAnalysis() {
+      setBountyAnalysis(null);
+      setBountyError('');
+      if (platform && category && apiKey) {
+        setBountyLoading(true);
+        try {
+          GeminiService.initialize(apiKey);
+          const analysis = await GeminiService.getBountyAnalysis(platform, category);
+          if (!cancelled) setBountyAnalysis(analysis);
+        } catch (err) {
+          if (!cancelled) setBountyError(err.message);
+        } finally {
+          if (!cancelled) setBountyLoading(false);
+        }
+      } else {
+        setBountyAnalysis(null);
+      }
+    }
+    fetchAnalysis();
+    return () => { cancelled = true; };
+  }, [platform, category, apiKey]);
+
   // TipTap editor setup
   const editor = useEditor({
     extensions: [StarterKit],
@@ -136,6 +170,8 @@ function App() {
       const tipTapContent = textToTipTapJson(aiReport);
       editor.commands.setContent(tipTapContent);
       
+
+      
       setSuccess('Report generated successfully using AI!');
     } catch (error) {
       console.error('Error generating report:', error);
@@ -163,6 +199,9 @@ function App() {
       const enhancedReport = await GeminiService.enhanceReport(currentContent, platform, category);
       const tipTapContent = textToTipTapJson(enhancedReport);
       editor.commands.setContent(tipTapContent);
+      
+
+      
       setSuccess('Report enhanced successfully!');
     } catch (error) {
       console.error('Error enhancing report:', error);
@@ -263,25 +302,66 @@ function App() {
             <img src={buggenieLogo} alt="BugGenie Logo" style={{ width: 96, marginRight: 16 }} />
             <Typography variant="h4" sx={{ fontWeight: 700, fontSize: { xs: 28, sm: 32 } }}>BugGenie</Typography>
           </Box>
+          {showGeminiInfo && (
+            <Alert
+              severity="info"
+              sx={{ mb: 2, fontSize: '0.97em', alignItems: 'center' }}
+              onClose={() => {
+                setShowGeminiInfo(false);
+                localStorage.setItem('hide_gemini_info', '1');
+              }}
+            >
+              <strong>Gemini 2.0 Flash Free Tier:</strong> 15 requests/minute, 1,500 requests/day. No credit card required. &nbsp;
+              <Link href="https://ai.google.dev/pricing" target="_blank" rel="noopener" underline="hover">
+                See details
+              </Link>
+            </Alert>
+          )}
           <Typography variant="body1" paragraph>
             Generate high-quality bug bounty reports tailored to the requirements of major platforms using AI.
           </Typography>
           
-            <Paper elevation={4} sx={{ p: { xs: 2, sm: 4 }, borderRadius: 3, boxShadow: 6, width: '100%' }}>
-              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3, width: '100%' }}>
-                <FormControl fullWidth>
-                  <InputLabel id="platform-label">Platform</InputLabel>
-                  <Select
-                    labelId="platform-label"
-                    value={platform}
-                    label="Platform"
-                    onChange={(e) => setPlatform(e.target.value)}
-                  >
-                    {PLATFORMS.map((p) => (
-                      <MenuItem key={p.key} value={p.key}>{p.label}</MenuItem>
-                    ))}
-                  </Select>
-                </FormControl>
+          {/* Bounty Analysis Toggle */}
+          <Box sx={{ mb: 2, display: 'flex', alignItems: 'center', gap: 2 }}>
+            <FormControlLabel
+              control={
+                <Switch
+                  checked={showBountyAnalysis}
+                  onChange={(e) => setShowBountyAnalysis(e.target.checked)}
+                  color="primary"
+                />
+              }
+              label="Show Bounty Analysis"
+            />
+            {showBountyAnalysis && (
+              <FormControlLabel
+                control={
+                  <Switch
+                    checked={showDetailedPolicies}
+                    onChange={(e) => setShowDetailedPolicies(e.target.checked)}
+                    color="secondary"
+                  />
+                }
+                label="Show Detailed Policies"
+              />
+            )}
+          </Box>
+
+                    <Paper elevation={4} sx={{ p: { xs: 2, sm: 4 }, borderRadius: 3, boxShadow: 6, width: '100%' }}>
+            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3, width: '100%' }}>
+              <FormControl fullWidth>
+                <InputLabel id="platform-label">Platform</InputLabel>
+                <Select
+                  labelId="platform-label"
+                  value={platform}
+                  label="Platform"
+                  onChange={(e) => setPlatform(e.target.value)}
+                >
+                  {PLATFORMS.map((p) => (
+                    <MenuItem key={p.key} value={p.key}>{p.label}</MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
                 {platform === 'bugcrowd' && (
                   <>
                     <FormControl fullWidth sx={{ mb: 2 }}>
@@ -368,25 +448,56 @@ function App() {
                       sx={{ mt: 2 }}
                     />
                     
-                    <Paper elevation={2} sx={{ p: 2, minHeight: 200, background: '#23272f', mt: 2, width: '100%' }}>
-                      <Stack direction="row" spacing={2} mb={2} flexWrap="wrap" useFlexGap>
-                        <Button variant="contained" onClick={handleGenerateReport} disabled={loading}>
-                          {loading ? 'Generating...' : 'Generate AI Report'}
-                        </Button>
-                        <Button variant="outlined" onClick={handleEnhanceReport} disabled={loading || !editor || !editor.getText().trim()}>
-                          {loading ? 'Enhancing...' : 'Enhance with AI'}
-                        </Button>
-                        <Button variant="outlined" onClick={handleCopyReport} disabled={!editor || !editor.getText().trim()}>
-                          Copy Report
-                        </Button>
-                        <Button variant="outlined" onClick={handleExportPDF} disabled={!editor || !editor.getText().trim()}>
-                          Export to PDF
-                        </Button>
-                      </Stack>
-                      <Box sx={{ border: '1px solid #333', borderRadius: 2, background: '#181a20', p: 3, width: '100%' }}>
-                        <EditorContent editor={editor} />
+                    {/* Side-by-side layout for analysis and report */}
+                    <Box sx={{ 
+                      display: 'flex', 
+                      flexDirection: { xs: 'column', lg: 'row' }, 
+                      gap: 3, 
+                      mt: 2,
+                      alignItems: 'flex-start'
+                    }}>
+                      {/* Bounty Analysis Panel */}
+                      {showBountyAnalysis && (
+                        <Box sx={{ 
+                          width: { xs: '100%', lg: '35%' }, 
+                          minWidth: { lg: 400 },
+                          position: { lg: 'sticky' },
+                          top: { lg: 20 }
+                        }}>
+                          {bountyLoading && <Alert severity="info">Loading bounty analysis from Gemini...</Alert>}
+                          {bountyError && <Alert severity="error">{bountyError}</Alert>}
+                          {bountyAnalysis && (
+                            <BountyAnalysis analysis={bountyAnalysis} showDetails={showDetailedPolicies} />
+                          )}
+                        </Box>
+                      )}
+                      
+                      {/* Report Editor Panel */}
+                      <Box sx={{ 
+                        flex: 1, 
+                        width: { xs: '100%', lg: showBountyAnalysis ? '65%' : '100%' }
+                      }}>
+                        <Paper elevation={2} sx={{ p: 2, minHeight: 200, background: '#23272f', width: '100%' }}>
+                          <Stack direction="row" spacing={2} mb={2} flexWrap="wrap" useFlexGap>
+                            <Button variant="contained" onClick={handleGenerateReport} disabled={loading}>
+                              {loading ? 'Generating...' : 'Generate AI Report'}
+                            </Button>
+                            <Button variant="outlined" onClick={handleEnhanceReport} disabled={loading || !editor || !editor.getText().trim()}>
+                              {loading ? 'Enhancing...' : 'Enhance with AI'}
+                            </Button>
+                            <Button variant="outlined" onClick={handleCopyReport} disabled={!editor || !editor.getText().trim()}>
+                              Copy Report
+                            </Button>
+                            <Button variant="outlined" onClick={handleExportPDF} disabled={!editor || !editor.getText().trim()}>
+                              Export to PDF
+                            </Button>
+                          </Stack>
+                          <Box sx={{ border: '1px solid #333', borderRadius: 2, background: '#181a20', p: 3, width: '100%' }}>
+                            <EditorContent editor={editor} />
+                          </Box>
+                        </Paper>
                       </Box>
-                    </Paper>
+                    </Box>
                   </>
                 )}
               </Box>

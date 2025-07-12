@@ -13,6 +13,13 @@ BugGenie is a modern web application that helps security researchers quickly gen
 - **Report enhancement** with AI to improve existing reports
 - **Copy Report** button to quickly copy the generated report to clipboard
 
+### 💰 Bounty Estimation & Acceptance Analysis
+- **Real-time bounty estimation** based on vulnerability severity and platform
+- **Acceptance probability calculation** using platform-specific policies
+- **Dynamic analysis updates** as you generate or enhance reports
+- **Platform policy insights** with detailed requirements and rejection reasons
+- **Smart recommendations** to improve report acceptance chances
+
 ### 🎯 Platform Support
 - **Bugcrowd** - Official 3-level VRT selection (Category > Subcategory > Variant/Affected Function)
   - Handles edge cases where some subcategories have no variants (2-tier selection)
@@ -84,13 +91,19 @@ Choose your target platform:
 - **HackerOne/Google:**
   - Select from a flat list of categories
 
-### 3. Add Vulnerability Details (Optional)
+### 3. View Bounty Analysis (Optional)
+- **Toggle "Show Bounty Analysis"** to see estimated bounty ranges and acceptance probability
+- **Toggle "Show Detailed Policies"** to view platform-specific requirements and rejection reasons
+- **Real-time updates** as you generate or enhance reports
+- **Smart recommendations** to improve your report's acceptance chances
+
+### 4. Add Vulnerability Details (Optional)
 - Field appears only after a valid category selection (all tiers for Bugcrowd, or category for others)
 - Cleared automatically if you change category/subcategory/variant
 - Describe your findings (affected endpoints, payloads, impact, etc.)
 - Leave empty for a generic template
 
-### 4. Generate, Enhance, Copy, or Export Report
+### 5. Generate, Enhance, Copy, or Export Report
 - **Generate AI Report**: Creates a professional report
 - **Enhance with AI**: Improves the current report
 - **Copy Report**: Copies the plain text report to clipboard
@@ -103,6 +116,7 @@ Choose your target platform:
 - **Rich Text Editor**: TipTap
 - **AI Integration**: Google Gemini 2.0 Flash
 - **PDF Generation**: jsPDF
+- **Bounty Analysis**: Custom algorithm based on real platform data
 - **Styling**: Tailwind CSS
 
 ## 🔒 Security & Privacy
@@ -132,8 +146,11 @@ buggenie/
 ├── src/
 │   ├── assets/
 │   │   └── bugcrowd-vrt.json         # Official Bugcrowd VRT taxonomy
+│   ├── components/
+│   │   └── BountyAnalysis.jsx        # Bounty estimation and analysis component
 │   ├── services/
-│   │   └── gemini.js                # Google Gemini AI service
+│   │   ├── gemini.js                # Google Gemini AI service
+│   │   └── bountyEstimator.js       # Bounty estimation and acceptance analysis
 │   ├── utils/
 │   │   └── textToTipTap.js          # Text conversion utilities
 │   ├── platforms.js                 # Platform and VRT categories
@@ -162,6 +179,30 @@ buggenie/
 - **Sections**: Summary (200 chars), Vulnerability Description, Attack Preconditions, Reproduction Steps, Attack Scenario, Screenshot/Evidence
 - **Style**: Brief and technical
 - **VRT Selection**: Flat, customizable list
+
+## 💰 Bounty Analysis Features
+
+### Real-Time Estimation
+- **Dynamic bounty ranges** based on vulnerability severity (Critical, High, Medium, Low, Info)
+- **Platform-specific pricing** reflecting actual market rates
+- **Historical data integration** from real bug bounty programs
+
+### Acceptance Probability
+- **AI-powered analysis** of report quality and completeness
+- **Platform policy compliance** checking against specific requirements
+- **Smart recommendations** to improve acceptance chances
+- **Real-time updates** as you generate or enhance reports
+
+### Platform Insights
+- **Detailed policy breakdown** for each platform
+- **Required vs preferred elements** clearly identified
+- **Common rejection reasons** to avoid
+- **Best practices guidance** for each platform
+
+### Supported Bounty Ranges
+- **Bugcrowd**: $50 - $15,000 (average: $1,000 - $3,000)
+- **HackerOne**: $25 - $20,000 (average: $300 - $1,750)
+- **Google VRP**: $50 - $50,000 (average: $550 - $5,500)
 
 ## 🤝 Contributing
 
