@@ -321,14 +321,6 @@ function App() {
                   <Typography variant="h4" sx={{ fontWeight: 700, fontSize: { xs: 28, sm: 32 } }}>BugGenie</Typography>
                 </Box>
                 <Box>
-                  <Button
-                    size="small"
-                    variant="outlined"
-                    sx={{ mr: 1, fontWeight: 600 }}
-                    onClick={() => setPage('learning')}
-                  >
-                    Learning
-                  </Button>
                   {!showGeminiInfo && (
                     <Button
                       size="small"
@@ -338,11 +330,19 @@ function App() {
                         setShowGeminiInfo(true);
                         localStorage.setItem('hide_gemini_info', '0');
                       }}
-                      sx={{ ml: 2 }}
+                      sx={{ mr: 1 }}
                     >
                       Show Gemini Info
                     </Button>
                   )}
+                  <Button
+                    size="small"
+                    variant="outlined"
+                    sx={{ fontWeight: 600 }}
+                    onClick={() => setPage('learning')}
+                  >
+                    Learning
+                  </Button>
                 </Box>
               </Box>
               {showGeminiInfo && (
