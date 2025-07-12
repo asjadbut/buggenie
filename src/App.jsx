@@ -397,7 +397,7 @@ function App() {
                       localStorage.setItem('hide_gemini_info', '0');
                     }}
                   >
-                    Show Gemini Info
+                    Gemini Usage & Limits
                   </Button>
                 )}
               </Box>
