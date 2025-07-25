@@ -336,24 +336,24 @@ function App() {
               </Typography>
               {showGeminiInfo && (
                 <Alert
-                  severity={geminiUsage > 1200 ? 'warning' : 'info'}
+                  severity={geminiUsage > 200 ? 'warning' : 'info'}
                   sx={{ mb: 2, fontSize: '0.97em', alignItems: 'center' }}
                   onClose={() => {
                     setShowGeminiInfo(false);
                     localStorage.setItem('hide_gemini_info', '1');
                   }}
                 >
-                  <strong>Gemini 2.0 Flash Free Tier:</strong>
-                  <Box component="span" sx={{ fontWeight: 600, color: geminiUsage > 1200 ? '#d32f2f' : '#1976d2', ml: 1 }}>
-                    {geminiUsage} / 1,500 requests used today
+                  <strong>Gemini 2.5 Flash Free Tier:</strong>
+                  <Box component="span" sx={{ fontWeight: 600, color: geminiUsage > 200 ? '#d32f2f' : '#1976d2', ml: 1 }}>
+                    {geminiUsage} / 250 requests used today
                   </Box>
                   <span style={{ marginLeft: 8, color: '#555' }}>
-                    (15 requests/minute limit)
+                    (10 requests/minute, 250,000 tokens/minute limit)
                   </span>
-                  <Link href="https://ai.google.dev/pricing" target="_blank" rel="noopener" underline="hover" sx={{ ml: 1 }}>
+                  <Link href="https://ai.google.dev/gemini-api/docs/rate-limits#current-rate-limits" target="_blank" rel="noopener" underline="hover" sx={{ ml: 1 }}>
                     See details
                   </Link>
-                  {geminiUsage > 1200 && (
+                  {geminiUsage > 200 && (
                     <Box component="span" sx={{ color: '#d32f2f', fontWeight: 600, ml: 2 }}>
                       Warning: You are approaching your daily quota!
                     </Box>

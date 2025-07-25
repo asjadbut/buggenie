@@ -1,6 +1,8 @@
 // Bounty estimation and acceptance probability service
 // Based on real platform data and policies from Bugcrowd, HackerOne, and Google VRP
 
+import GeminiService from './gemini';
+
 class BountyEstimatorService {
   constructor() {
     this.platformData = {
@@ -255,25 +257,29 @@ class BountyEstimatorService {
   }
 
   // Estimate bounty range for a vulnerability
-  estimateBounty(platform, category) {
-    const platformInfo = this.platformData[platform];
-    if (!platformInfo) {
-      throw new Error(`Unsupported platform: ${platform}`);
+  async estimateBounty(platform, category) {
+    try {
+      const geminiResult = await GeminiService.getBountyAnalysis(platform, category);
+      // Return only the bounty field for compatibility
+      return geminiResult.bounty || { min: 0, max: 0, avg: 0, severity: 'unknown' };
+    } catch (e) {
+      // Fallback to hardcoded if Gemini fails
+      const platformInfo = this.platformData[platform];
+      if (!platformInfo) {
+        throw new Error(`Unsupported platform: ${platform}`);
+      }
+      const severity = this.getSeverity(category);
+      const range = platformInfo.baseRanges[severity];
+      if (!range) {
+        return { min: 0, max: 0, avg: 0, severity: 'unknown' };
+      }
+      return {
+        min: range.min,
+        max: range.max,
+        avg: range.avg,
+        severity: severity
+      };
     }
-
-    const severity = this.getSeverity(category);
-    const range = platformInfo.baseRanges[severity];
-    
-    if (!range) {
-      return { min: 0, max: 0, avg: 0, severity: 'unknown' };
-    }
-
-    return {
-      min: range.min,
-      max: range.max,
-      avg: range.avg,
-      severity: severity
-    };
   }
 
   // Calculate acceptance probability based on platform policies
@@ -437,8 +443,8 @@ class BountyEstimatorService {
   }
 
   // Get comprehensive analysis for a vulnerability
-  getComprehensiveAnalysis(platform, category, reportContent = '') {
-    const bounty = this.estimateBounty(platform, category);
+  async getComprehensiveAnalysis(platform, category, reportContent = '') {
+    const bounty = await this.estimateBounty(platform, category);
     const quality = this.analyzeReportQuality(reportContent);
     const acceptance = this.calculateAcceptanceProbability(platform, category, quality);
     const policies = this.getPlatformPolicies(platform);

@@ -13,7 +13,7 @@ class GeminiService {
     }
     
     this.genAI = new GoogleGenerativeAI(apiKey);
-    this.model = this.genAI.getGenerativeModel({ model: "gemini-2.0-flash-exp" });
+    this.model = this.genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
     this.isInitialized = true;
   }
 
@@ -164,7 +164,7 @@ Focus on clean, professional content that can be directly used.`;
 
     const prompt = `For the ${platform} bug bounty platform, and the vulnerability category "${category}", please provide a comprehensive analysis.
 
-Please return your answer in EXACT JSON format with this structure:
+Please return your answer in EXACT JSON format like this example structure:
 {
   "platform": "${platform}",
   "category": "${category}",
